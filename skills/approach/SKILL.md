@@ -1,116 +1,100 @@
 ---
 name: approach
-description: Defines the lean, efficient, high-impact methodology for approaching coding, code review, bug fixing, refactoring, and general engineering tasks in Antigravity. Use this skill whenever starting, planning, or executing any software engineering task, writing code, reviewing diffs or PRs, investigating bugs, or refactoring, to minimize tool calls, eliminate unnecessary research (like reading git logs or irrelevant files), and deliver fast, focused, high-quality results without wasting time or tokens.
+description: A high-velocity, disciplined framework for approaching any coding or code-related task. Enforces default plan-first mode (proposing a concise plan for user approval before editing files), bans git history/commit churn, prevents scope creep, minimizes tool calling, and eliminates excessive post-checks. Use whenever the user asks for code changes, bug fixes, feature implementation, refactoring, or code-related tasks.
 ---
 
-# Approach to Engineering Tasks
+# Approach: High-Velocity, Plan-First Coding Framework
 
-This skill defines the operational mindset and execution protocol for software engineering tasks in Antigravity. Its core objective is **maximum efficiency and precision**: solving problems with minimal tool calls, minimal token overhead, and zero unnecessary exploratory detours.
-
----
-
-## The Core Philosophy: Minimal Sufficient Context
-
-Every tool call carries latency, cost, and context pollution. A senior engineer does not read the entire repository or dig through months of commit history to change a button, fix a null pointer, or review a pull request. They identify the minimal blast radius, inspect only what is strictly necessary, apply the change or feedback, verify locally, and finish.
-
-### The Golden Rule
-> **Never explore code or history out of curiosity or speculation.** Gather only the minimal sufficient context required to complete the specific task accurately.
+This skill teaches agents how to approach coding and software engineering tasks with high velocity, minimal tool churn, and disciplined precision.
 
 ---
 
-## What NOT To Do (Common Inefficiencies to Avoid)
+## Core Philosophy
 
-### 1. No Git Archaeological Dives
-- **Do not run `git log`, `git blame`, `git diff HEAD~N`, or `git show`** unless the user explicitly asks for historical context (e.g., "when was this introduced?" or "bisect this regression").
-- **Why**: The current working tree is the single source of truth. Past commits, commit messages, and author histories are almost always irrelevant to solving the immediate problem and consume massive context and time.
-
-### 2. No Unbounded Codebase Reconnaissance
-- **Do not browse the entire codebase** or read files outside the direct blast radius of the task.
-- **Do not read dependency lockfiles** (`package-lock.json`, `pnpm-lock.yaml`, `Cargo.lock`) unless explicitly tasked with dependency resolution.
-- **Do not read multiple adjacent files "just in case"**. Trace only the direct import, caller, or type definition that directly impacts your task.
-- **Why**: Broad exploration fills the context window with noise, leading to higher hallucination rates, slower turnaround times, and unnecessary API calls.
-
-### 3. No Speculative Runtime or Environment Probing
-- **Do not probe the live runtime environment**: Avoid running commands like `ps`, `netstat`, `lsof`, `curl localhost`, or inspecting system daemons unless explicitly requested.
-- **Do not attempt to inspect live databases or external services**: Assume the local development environment is static or partial—databases, caches, or background services may not be running locally.
-- **Do not search for runtime logs**: Trust error messages and context provided by the user in the prompt. If runtime information is truly missing and required, ask concisely rather than hunting for log files.
-
-### 4. Never Run Repository-Wide Test Suites Unprompted
-- **Do not execute `npm test`, `pytest`, `cargo test`, `mvn test` across the whole repository** unless explicitly commanded by the user.
-- **Why**: Full test suites in real-world repositories often take minutes, require unconfigured databases or network mocks, have existing flaky tests, and consume tens of thousands of tokens of stderr/stdout.
+1. **Plan before acting**: Default to planning mode. Present a clear, concise plan to the user and wait for approval before making file changes.
+2. **Surgical context**: Read only what is strictly required to understand the immediate task. Never explore peripheral files.
+3. **Batch execution**: Perform all necessary reads, edits, or commands in unified, batched turns rather than piecemeal tool calls.
+4. **Minimal post-checks**: Run at most a single targeted validation check. Never enter multi-pass verification loops.
 
 ---
 
-## Protocols by Task Type
+## The Two-Phase Workflow
 
-### Protocol A: Coding & Bug Fixing
+### Phase 1: Planning Mode (DEFAULT)
 
-When implementing a feature, fixing a bug, or refactoring:
+Whenever a coding task is presented, the agent **must start in planning mode**. Do not make edits or write code until the user approves the plan.
 
+1. **Targeted Inspection**:
+   - Read only the specific target file(s) mentioned by the user or directly involved in the issue.
+   - Do NOT run broad greps or read unrelated files.
+2. **Formulate the Plan**:
+   - Provide a concise plan using this exact structure:
+     - **Objective**: 1–2 sentence summary of what will be accomplished.
+     - **Affected Files**: Explicit file paths to be created or modified.
+     - **Key Changes**: Bulleted list of specific changes/logic to apply.
+     - **Validation Step**: The single command or test that will verify the change.
+3. **Request Approval**:
+   - Conclude by asking the user to confirm or adjust the plan before proceeding.
+
+> **Exception**: If the user's prompt explicitly instructs immediate execution (e.g., "fix this immediately without asking", "go ahead and do it now"), you may combine the plan summary directly into the execution turn.
+
+---
+
+### Phase 2: Execution Mode (After Approval)
+
+Once the user approves the plan:
+
+1. **Batch Edits**:
+   - Apply edits to all target files in a single turn.
+   - Make clean, surgical modifications that stick strictly to the approved scope.
+2. **Single Targeted Verification**:
+   - Run at most ONE relevant check (e.g., build command, targeted unit test, or syntax check) chained with `&&` if dependent.
+   - Do NOT run redundant checks, linter sweeps, or full regression suites unless requested.
+3. **Concise Report**:
+   - Present a succinct summary of what changed and the result of the validation step, with clickable file links.
+
+---
+
+## Strict Anti-Patterns (Banned Behaviors)
+
+### 1. No Git History or Commit Browsing
+- **Never** run `git log`, `git reflog`, `git show <commit>`, `git blame`, or inspect commit messages unless the user specifically asked for historical context.
+- Treat the current working tree as the source of truth.
+
+### 2. No Scope Creep or Unnecessary Exploration
+- Do not inspect surrounding directories, config files, or helper modules that are not directly relevant to the user request.
+- If a target file path is provided, inspect only that file. Avoid "exploring the architecture" unless the user asks an architectural question.
+
+### 3. No Tool Calling Churn
+- Never issue one tool call per turn when multiple calls can be batched in parallel.
+- Never repeat a search or re-read a file that has not changed.
+- Avoid multi-step search pipelines when the target location is already known.
+
+### 4. No Excessive Post-Verification Loops
+- Avoid running multiple rounds of `git status`, `git diff`, test suites, and linter runs after an edit.
+- If a verification check succeeds, stop immediately and report the outcome.
+- Do not re-run passing tests without new changes.
+
+---
+
+## Output Template: Plan Format
+
+When presenting the plan in Phase 1, use this concise template:
+
+```markdown
+### Proposed Plan
+
+**Objective**: [1 sentence on the goal]
+
+**Files to Modify**:
+- `[path/to/file.ext]`: [brief description of change]
+
+**Changes**:
+1. [Specific edit 1]
+2. [Specific edit 2]
+
+**Verification**:
+- `[single validation command, e.g., npm run build / pytest path/to/test]`
+
+Please let me know if you would like me to proceed with this plan or make any adjustments.
 ```
-[Understand Request] ──► [Pinpoint Entry File] ──► [Read Local Scope Only] ──► [Edit] ──► [Targeted Verification] ──► [Done]
-```
-
-1. **Pinpoint the Entry Point directly**:
-   - If the user gave a file path or symbol name, go directly to that file with `read_file`.
-   - If the location is unknown, perform **one** targeted search (e.g. `grep` or file search for the exact identifier or error string). Do not wander.
-2. **Inspect the immediate scope**:
-   - Read only the relevant function, component, or lines. Avoid reading 1000+ line files in full if only 50 lines are relevant.
-   - Follow imports or types only if the contract or interface is ambiguous from the immediate code.
-3. **Assume baseline health**:
-   - Assume all untouched code is working. Do not attempt unprompted cleanups, refactoring of adjacent functions, or fixing pre-existing linter warnings outside your scope.
-4. **Make minimal, surgical edits**:
-   - Keep changes tightly scoped to the request. Respect existing architectural patterns, formatting, and conventions in the file.
-5. **Fast targeted verification**:
-   - Run lightweight static checks on only the files you touched (e.g., `tsc --noEmit` on the file, `node -c <file>`, or targeted linter on the modified file).
-   - Verify that your change does not break syntax, type definitions, or crash the service.
-   - Stop and return the answer once verified.
-
----
-
-### Protocol B: Code Review & PR Analysis
-
-When asked to review a code snippet, diff, or pull request:
-
-```
-[Read Diff / Target Files] ──► [Analyze Blast Radius] ──► [Evaluate Quality & Risks] ──► [Deliver Structured Review]
-```
-
-1. **Stay anchored to the diff**:
-   - Base your review solely on the changed files or provided patch.
-   - Do NOT run `git log` or inspect historical commits to evaluate the PR author's past work.
-   - Only inspect outside files if an imported contract or exported API signature changed and its direct caller/callee needs validation.
-2. **Focus on high-value review dimensions**:
-   - **Correctness & Logic**: Edge cases, null/undefined safety, race conditions, off-by-one errors.
-   - **Security**: Injection vectors, auth/permission checks, sensitive data exposure.
-   - **Performance**: Unnecessary re-renders, N+1 queries, unindexed lookups, memory leaks.
-   - **Maintainability & Typing**: Type soundness, idiomatic conventions, clear naming.
-3. **Review output format**:
-   - Be concise and actionable.
-   - Categorize comments by severity (e.g., `Critical`, `Warning`, `Suggestion`).
-   - Include concrete replacement code snippets for suggested changes so the user can immediately apply them without guessing.
-
----
-
-## Efficiency Checklist Before Making a Tool Call
-
-Before executing any tool call, ask yourself:
-
-| Question | If YES | If NO |
-| :--- | :--- | :--- |
-| **Is this information already in the prompt or context?** | **Stop.** Do not make the tool call. | Proceed. |
-| **Am I about to run a `git` command (`git log`, `git blame`, etc.)?** | **Stop.** Unless explicitly requested, do not run it. | Proceed. |
-| **Is this file directly relevant to the edit or review?** | Proceed with targeted reading. | **Stop.** Do not read tangential files. |
-| **Am I about to run a full test suite unprompted?** | **Stop.** Use targeted syntax/linter checks instead. | Proceed. |
-| **Can I accomplish this in fewer steps?** | Optimize and combine tool calls. | Proceed. |
-
----
-
-## Summary Checklist for Completion
-
-- [ ] Changed/reviewed only what was requested.
-- [ ] No unprompted git history or commit inspection.
-- [ ] No extraneous file reads or wandering through unrelated modules.
-- [ ] No runtime daemon, port, or database poking.
-- [ ] Verification completed with fast, lightweight, targeted checks (syntax, typing, or lint).
-- [ ] Response is concise, direct, and actionable.
