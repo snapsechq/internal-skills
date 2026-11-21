@@ -1,0 +1,20 @@
+{
+  "skill_name": "backend-service-designer",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I need to bootstrap a new Node.js microservice called 'billing-service' running on port 8085. It needs to manage subscription plans and customer invoices. Structure the service following enterprise architecture standards with ES6 modules, configuration validation, modular setup, Swagger documentation, and proper error handling.",
+      "expected_output": "A complete microservice architecture scaffolded with src/config (env.js and app-config.js), src/setup (setup-app, setup-middlewares, setup-routes), src/controllers, src/services, src/routes, src/swagger, src/middleware, src/errors, and src/utils, fully compliant with ES6 modules."
+    },
+    {
+      "id": 2,
+      "prompt": "Refactor this legacy Express app into a standardized architecture. Currently all routes, DB queries, and error handling are in one large app.js using CommonJS require() and direct process.env calls. Convert it to ES6 modules with controllers, services, routes, Swagger OpenAPI 3.0 docs, and standard ApiResponse.",
+      "expected_output": "The monolithic app is refactored into a 3-tier REST architecture (routes/v1, controllers, services), with Config.check() in config/env.js, swagger docs in src/swagger/routes/, catchError wrapper on all controller handlers, ApiError for exceptions, and package.json with 'type': 'module'."
+    },
+    {
+      "id": 3,
+      "prompt": "Add a new 'Webhook' entity to our backend service. It should have routes, controller, service, and OpenAPI Swagger documentation. Ensure it follows our controller catchError pattern, service named parameter destructuring, tenant isolation (orgId), and ApiResponse.",
+      "expected_output": "Created src/routes/v1/webhook.routes.js, src/controllers/webhook.controller.js, src/services/webhook.service.js, and src/swagger/routes/webhook.swagger.js following the exact patterns, mounted in src/routes/v1/index.js."
+    }
+  ]
+}
