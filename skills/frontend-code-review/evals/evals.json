@@ -4,22 +4,22 @@
     {
       "id": 1,
       "prompt": "Review this React page component 'src/pages/VM/pages/assessments-list.jsx'. It uses RTK Query to load assessments, displays tabs for All/Active/Archived, and renders a table. Audit the component according to our frontend design standards and point out any violations.",
-      "expected_output": "The review identifies violations of the golden rules: checks if ApiErrorHandler is used for RTK Query errors, ensures TabsTrigger has no icons, verifies table cells render '-' or '--' for empty values, ensures page action button is primary with an icon, and flags if Skeletons or EmptyScreen are missing."
+      "expected_output": "The agent generates a standalone markdown review file (e.g. FRONTEND_REVIEW_assessments-list.md) detailing every issue with file, line number, issue description, and exact proposed code fix (covering ApiErrorHandler, iconless TabsTrigger, table cell '-' fallbacks, primary action button, and EmptyScreen). The agent links to the report in chat and prompts the user to decide how to proceed with fixes."
     },
     {
       "id": 2,
       "prompt": "Conduct a frontend code review on our new Cloud Dashboard component at 'src/pages/auto-pt/cloud-security/dashboard.jsx'. The component shows several vulnerability distribution charts, stats cards, and a loading state.",
-      "expected_output": "The review checks that each chart card has an Info icon on the right with a hover tooltip explaining the metric, ensures the loading state renders a layout-reflecting Skeleton rather than a generic spinner, validates API error handling with ApiErrorHandler, and checks empty screen fallbacks."
+      "expected_output": "The agent writes a markdown review file documenting issues by file and line with proposed fixes: flags charts lacking header info icons with hover tooltips, verifies layout-reflecting Skeletons over generic spinners, checks ApiErrorHandler and empty screen fallbacks, and awaits user decision before modifying code."
     },
     {
       "id": 3,
       "prompt": "Please review this new modal form component 'src/pages/AIM/components/CreatePolicyModal.jsx'. Check its form validation, field labels, action buttons, and overall UI compliance.",
-      "expected_output": "The review verifies that form validation uses Zod schema with React Hook Form, all input fields have proper descriptive placeholders, FormLabels do not contain embedded icons, the submit button is primary styled with an icon and disabled when invalid or submitting, and error messages use FormMessage."
+      "expected_output": "The agent generates a markdown review report outlining issues (file, line, description, and exact fix): verifies Zod schema in schema.jsx, React Hook Form usage, input placeholders, iconless FormLabels, primary submit button with icon and disabled states, and waits for user decision on fixing."
     },
     {
       "id": 4,
       "prompt": "Review the directory structure and implementation of our new feature page 'src/pages/AIM/pages/integrations/'. Currently everything is crammed into a single monolithic 800-line integrations.jsx file, with inline form states and prop-drilling.",
-      "expected_output": "The review flags the architectural violation and prescribes the standard page structure: page-name/ with store.js (Zustand store for cross-component comms), page-name.jsx (lean composer orchestrating child components with ApiErrorHandler and EmptyScreen), components/ folder with forms/ (form1.jsx and schema.jsx for Zod validation), and verifies that each child component accepts an isLoading prop to render its own localized skeleton."
+      "expected_output": "The agent produces a markdown review report detailing architectural violations by file and line with a refactoring blueprint: prescribes page-name/, store.js (Zustand), page-name.jsx (lean composer with ApiErrorHandler and EmptyScreen), components/forms/ (form1.jsx and schema.jsx), and per-component isLoading skeleton contracts. The agent awaits user approval before modifying files."
     }
   ]
 }

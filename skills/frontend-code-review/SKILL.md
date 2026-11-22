@@ -7,9 +7,10 @@ description: >-
   handling (<ApiErrorHandler error={error} />), iconless tab headers (<TabsTrigger>), fallback placeholders for empty table cells
   ('-' or '--'), iconless form labels, chart card info icons with hover tooltips, layout-reflecting loading skeletons,
   primary-styled page action buttons with icons, empty screens for zero-data states, and Zod + React Hook Form validation with
-  descriptive placeholders. Activate this skill whenever the user asks to review frontend code, audit a React component or page,
-  check UI quality or compliance, inspect PRs for frontend changes, or verify UI components against design standards, even if they
-  simply say "review this UI", "audit my page", or "check this frontend code".
+  descriptive placeholders. Generates a standalone Markdown review report file detailing each issue (file, line, issue description,
+  and proposed fix) and waits for user decision before modifying code. Activate this skill whenever the user asks to review
+  frontend code, audit a React component or page, check UI quality or compliance, inspect PRs for frontend changes, or verify UI
+  components against design standards, even if they simply say "review this UI", "audit my page", or "check this frontend code".
 ---
 
 # Frontend Code Review Skill
@@ -343,63 +344,127 @@ cell: ({ row }) => <span>{row.original.ipAddress ?? '--'}</span>
 
 ---
 
-## Review Output Format
+## Review Workflow & Output Protocol
 
-When conducting a code review using this skill, format the response using this standard structure:
+When reviewing a page or frontend component, the agent must strictly follow this **3-Phase Protocol**:
+
+```text
+┌────────────────────────────────────────────────────────────────────────┐
+│                   REVIEW WORKFLOW & OUTPUT PROTOCOL                    │
+├────────────────────────────────────────────────────────────────────────┤
+│ Phase 1: Audit        │ Inspect target against Page Structure & Rules  │
+│ Phase 2: Report File  │ Generate standalone FRONTEND_REVIEW_<name>.md  │
+│ Phase 3: User Decision│ Present summary & file link; wait for user     │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+### Phase 1: Targeted Audit
+- Inspect target component(s) and directory structure against:
+  1. **Page Structure Standards** (`page-name/`, `store.js`, `page-name.jsx` composer, `components/forms/schema.jsx`, child `isLoading` contracts).
+  2. **The 9 Golden UI Rules** (API error handling, iconless tabs, table cell fallbacks, iconless labels, chart card tooltips, skeletons, primary action buttons, empty screens, Zod form validation).
+- Record exact file paths and line numbers for every defect found.
+
+### Phase 2: Generate the Markdown Review Report File
+The review must **not** merely be dumped in chat. The agent **must write a standalone Markdown file** documenting all findings and proposed fixes.
+- **File Name**: `FRONTEND_REVIEW_<page-name>.md` in the current working directory, or `<page-directory>/FRONTEND_REVIEW.md`.
+- **Mandatory Content for Each Issue**:
+  1. **File**: Full or workspace-relative path.
+  2. **Line**: Exact line number or range (e.g. `L42-L58`).
+  3. **Issue Description**: Concise explanation of what rule is violated and its impact.
+  4. **Current Code**: The offending snippet.
+  5. **Proposed Fix**: Drop-in code replacement and clear instructions on how to resolve it.
+
+*Template Reference: [references/review-output-template.md](./references/review-output-template.md)*
+
+### Phase 3: Present Summary and Await User Decision
+Once the report file is generated:
+1. Provide a concise executive summary in the chat turn.
+2. Link directly to the generated report file: `[FRONTEND_REVIEW_<name>.md](file:///absolute/path/to/report.md)`.
+3. **DO NOT modify the codebase automatically.**
+4. Ask the user how they would like to proceed:
+   - Apply all proposed fixes automatically.
+   - Apply specific selected fixes (e.g., "apply fixes for Issues 1, 3, and 5").
+   - Leave source files untouched for manual modification.
+
+---
+
+## Report Structure Template
+
+The generated Markdown file must follow this exact format:
 
 ```markdown
-# 📋 Frontend Code Review Report
+# 📋 Frontend Code Review Report: [Page / Component Name]
 
-**File / Directory Reviewed**: `[path/to/page-directory or component]`
-**Overall Status**: [PASS / NEEDS WORK / CRITICAL ISSUES]
-
----
-
-## Architectural & Page Structure Audit
-- **Directory Layout**: [Compliant / Non-Compliant - check for page-name/, store.js, page-name.jsx, components/forms/schema.jsx]
-- **Component Decomposition**: [page-name.jsx acts as clean composer vs monolithic file]
-- **Loading Contract**: [Child components accept `isLoading` and render internal skeletons]
-- **State Management**: [Zustand `store.js` utilized for cross-component communication]
+- **Target Path**: `[path/to/page-or-component]`
+- **Review Date**: [YYYY-MM-DD]
+- **Overall Status**: 🔴 Action Required / 🟡 Needs Minor Polish / 🟢 Approved
+- **Total Issues Found**: [Count]
 
 ---
 
-## Summary of Rule Findings
-- **Rule Violations**: [X] issues identified across [Y] rules.
-- **Key Strengths**: [Brief note on good patterns found].
+## 1. Executive Summary
+[Brief 2-3 sentence overview of the component/page architecture, overall compliance, and critical findings.]
 
 ---
 
-## Detailed Findings by Rule
+## 2. Detailed Issues & Fixes
 
-### 🔴 Critical Issues (Violations)
-1. **[Architectural / Rule Name, e.g., Page Structure: Monolithic Implementation]**
-   - **Location**: `src/pages/AIM/pages/integrations/integrations.jsx`
-   - **Problem**: Entire page (tables, modal dialogs, form states) is implemented in a single 800-line file without `store.js` or `components/forms/`.
-   - **Fix**: Decompose into `integrations.jsx` (composer), `store.js` (Zustand state), `components/tables/`, and `components/forms/` with `schema.jsx`.
-
-2. **[Rule 1: API Error Handling]**
-   - **Location**: `path/to/file.jsx:L42`
-   - **Problem**: Query `useGetProjectsQuery` does not destructure `isError` or `error` and lacks `<ApiErrorHandler />`.
-   - **Fix**:
-     ```jsx
-     const { data, isLoading, isError, error } = useGetProjectsQuery();
-     if (!isLoading && isError) return <ApiErrorHandler error={error} />;
-     ```
-
-### 🟡 Minor Improvements & Polish
-- [Any minor styling, accessibility, or non-blocking suggestions]
+### Issue 1: [Short Title, e.g. Missing ApiErrorHandler on RTK Query]
+- **File**: `[path/to/file.jsx]` (Line: [LineNumber])
+- **Severity**: 🔴 Critical / 🟡 Warning / 🔵 Suggestion
+- **Rule Violated**: [Rule Name]
+- **Issue Description**: [Detailed explanation of defect]
+- **Current Code**:
+  ```jsx
+  // Offending snippet
+  ```
+- **Proposed Fix**:
+  ```jsx
+  // Exact replacement code
+  ```
 
 ---
 
-## Action Checklist for PR Approval
-- [ ] Align directory structure (`page-name/`, `store.js`, `page-name.jsx`, `components/`)
-- [ ] Ensure `page-name.jsx` acts as composer with `<ApiErrorHandler />` and `<EmptyScreen />`
-- [ ] Co-locate forms in `components/forms/form1.jsx` and Zod schema in `components/forms/schema.jsx`
-- [ ] Ensure child components accept `isLoading` and render localized skeletons
-- [ ] Remove any icons from `<TabsTrigger>`
-- [ ] Add `'-'` or `'--'` fallback to empty table cells
-- [ ] Ensure `<FormLabel>` contains zero icons
-- [ ] Add `<CustomTooltip>` with `<Info>` icon to chart card header
-- [ ] Style primary action buttons with `variant="primary"` and action icon
-- [ ] Verify Zod validation and descriptive input placeholders
+### Issue 2: [Short Title, e.g. TabsTrigger Contains Navigation Icon]
+- **File**: `[path/to/file.jsx]` (Line: [LineNumber])
+- **Severity**: 🔴 Critical / 🟡 Warning / 🔵 Suggestion
+- **Rule Violated**: [Rule Name]
+- **Issue Description**: [Detailed explanation of defect]
+- **Current Code**:
+  ```jsx
+  // Offending snippet
+  ```
+- **Proposed Fix**:
+  ```jsx
+  // Exact replacement code
+  ```
+
+---
+
+## 3. Architectural & Page Structure Audit
+
+| Requirement | Status | Notes |
+| :--- | :---: | :--- |
+| **Directory Layout** (`page-name/`, `store.js`, `page-name.jsx`, `components/`) | ✅ / ❌ | [Notes] |
+| **Lean Composer Pattern** (`page-name.jsx` delegates to `components/`) | ✅ / ❌ | [Notes] |
+| **Zustand State Management** (`store.js` for cross-component comms) | ✅ / ❌ | [Notes] |
+| **Form & Zod Schema Co-location** (`components/forms/schema.jsx`) | ✅ / ❌ | [Notes] |
+| **Component `isLoading` Contract** (Localized Skeletons per component) | ✅ / ❌ | [Notes] |
+| **Top-Level `ApiErrorHandler`** | ✅ / ❌ | [Notes] |
+| **Top-Level `EmptyScreen`** | ✅ / ❌ | [Notes] |
+| **Iconless Tab Headers** (`TabsTrigger`) | ✅ / ❌ | [Notes] |
+| **Table Cell Fallbacks** (`'-'` or `'--'`) | ✅ / ❌ | [Notes] |
+| **Iconless Form Labels** (`<FormLabel>`, `<Label>`) | ✅ / ❌ | [Notes] |
+| **Chart Card Header Info Tooltips** | ✅ / ❌ | [Notes] |
+| **Primary Action Buttons with Icons** | ✅ / ❌ | [Notes] |
+| **Zod Schema & Descriptive Placeholders** | ✅ / ❌ | [Notes] |
+
+---
+
+## 4. Next Steps & User Decision
+
+Please review the issues and proposed fixes above. You can choose to:
+1. **Apply All Fixes**: Instruct the agent to execute all proposed fixes automatically.
+2. **Selective Fixes**: Specify which issues to apply (e.g. "Apply fixes for Issues 1 and 3").
+3. **Manual Adjustments**: Implement fixes manually or request alternative approaches.
 ```
